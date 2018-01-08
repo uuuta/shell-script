@@ -1,0 +1,84 @@
+#!/bin/sh
+#
+# Startup script for Apache Tomcat 5.5
+#
+# chkconfig: 2345 85 15
+# description: Apache Tomcat Java Servlets and JSP server
+# processname: tomcat
+# pidfile: /var/run/tomcat.pid
+# config: /usr/local/tomcat/conf/server.xml
+
+# Source function library.
+#. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+#. /etc/sysconfig/network
+
+# SET ENV
+export LANG=ja_JP.SJIS
+
+# SET SHELL ENV
+CATALINA_HOME=/usr/local/tomcat
+TOMCAT_SCRIPT=$CATALINA_HOME/bin/catalina.sh
+START_SCRIPT=$CATALINA_HOME/bin/startup.sh
+SHUTDOWN_SCRIPT=$CATALINA_HOME/bin/shutdown.sh
+TOMCAT_USER=tomcat55
+
+[ -f $TOMCAT_SCRIPT ] || exit 0
+
+# See how we were called.
+case "$1" in
+    start)
+        # Start daemons.
+        if [ -f /var/lock/subsys/tomcat ] ; then
+            echo "Tomcat already started!"
+            exit 1
+        fi
+        echo "Starting Tomcat: "
+        $START_SCRIPT
+        RETVAL=$?
+#       echo "ps info: "
+#       ps -eF | grep tomcat | grep -v grep
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/tomcat
+        ;;
+    debug)
+        if [ -f /var/lock/subsys/tomcat ] ; then
+            echo "Tomcat already started!"
+            exit 1
+        fi
+        export JAVA_OPTS="-agentlib:jdwp=transport=dt_socket,address=8000,server=y,suspend=n"
+        echo "Starting Tomcat debug mode: "
+        $START_SCRIPT
+        RETVAL=$?
+        echo "ps info: "
+        ps -eF | grep java | grep -v grep
+        echo
+        [ $RETVAL = 0 ] && touch /var/lock/subsys/tomcat
+        ;;
+    stop)
+        # Stop daemons.
+        if [ ! -f /var/lock/subsys/tomcat ] ; then
+            echo "Tomcat already stopped!"
+            exit 1
+        fi
+        echo "Shutting down Tomcat: "
+        $SHUTDOWN_SCRIPT
+        RETVAL=$?
+        echo
+        [ $RETVAL = 0 ] && rm -f /var/lock/subsys/tomcat
+        ;;
+    status)
+        status tomcat
+        exit $?
+        ;;
+    restart)
+        $0 stop
+        $0 start
+        ;;
+    *)
+        echo "Usage: $TOMCAT_PROG {start|debug|stop|status|restart}"
+        exit 1
+esac
+
+exit 0
